@@ -89,7 +89,7 @@ export default VgCamera;
 const useStyles = makeStyles(() =>
   createStyles({
     wrapperStyle: {
-      width: '100%',
+      width: 'calc(100% - 16px)',
       maxWidth: '700px',
       height: 'calc(100% - 142px)',
       top: '136px',
