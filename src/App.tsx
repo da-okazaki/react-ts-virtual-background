@@ -1,10 +1,9 @@
-import "./App.css";
-import VgSelectCard from "./components/vg-select-card";
-import VgCamera from "./components/vg-camera";
+import './App.css';
+import { VgCamera, VgSelectCard } from './components';
 
 export default function App() {
   return (
-    <div className="App">
+    <div className='App'>
       <VgSelectCard />
       <VgCamera />
     </div>
