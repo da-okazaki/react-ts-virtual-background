@@ -52,6 +52,7 @@ const VgCamera: FC = () => {
         const canvas: any = document.getElementById('canvas');
 
         // ? Segmentation occurs here, taking video frames as the input
+        if (!model) return;
         const segmentation = await model.segmentPerson(video, {
           flipHorizontal: false,
           internalResolution: 'medium',
@@ -91,7 +92,7 @@ const useStyles = makeStyles(() =>
     wrapperStyle: {
       width: 'calc(100% - 16px)',
       maxWidth: '700px',
-      height: 'calc(100% - 142px)',
+      height: 'calc(80% - 142px)',
       top: '136px',
       display: 'flex',
       justifyContent: 'center',
