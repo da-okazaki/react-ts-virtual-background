@@ -3,6 +3,6 @@
   align-items: center;
   font-family: sans-serif;
   flex-direction: column;
-  height: calc(100vh - 56px);
+  height: 100vh;
   padding: 8px;
 }
