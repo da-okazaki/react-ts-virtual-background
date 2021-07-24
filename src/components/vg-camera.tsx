@@ -2,7 +2,7 @@ import { FC, useState, useEffect } from 'react';
 import Webcam from 'react-webcam';
 import '@tensorflow/tfjs';
 import * as bodyPix from '@tensorflow-models/body-pix';
-import { createStyles, makeStyles } from '@material-ui/core';
+import { createStyles, makeStyles, Theme } from '@material-ui/core';
 
 import { useSelector } from 'react-redux';
 import { RootState } from '../app/rootReducer';
@@ -10,7 +10,6 @@ import { RootState } from '../app/rootReducer';
 const VgCamera: FC = () => {
   const classes = useStyles();
   const { virtualBgType, virtualBgImage } = useSelector((state: RootState) => state.medias);
-
   const [model, setModel]: any = useState();
   const [callBackId, setCallBackId]: any = useState();
 
@@ -32,17 +31,62 @@ const VgCamera: FC = () => {
       /**
        * compositeFrame
        */
-      const compositeFrame = async (video: any, canvas: any, backgroundDarkeningMask: any) => {
-        if (!backgroundDarkeningMask) return;
-        // grab canvas holding the bg image
-        var ctx = canvas.getContext('2d');
-        // composite the segmentation mask on top
-        ctx.globalCompositeOperation = 'destination-over';
-        ctx.putImageData(backgroundDarkeningMask, 0, 0);
-        // composite the video frame
-        ctx.globalCompositeOperation = 'source-in';
-        ctx.drawImage(video, 0, 0, 640, 480);
+      const compositeFrame = async (video: HTMLVideoElement, canvas: HTMLCanvasElement, mask: any, seg: any) => {
+        if (!mask) return;
+        const ctx: CanvasRenderingContext2D | null = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(video, 0, 0);
+        const fgImg = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+        // background
+        const bgcanvas = document.createElement("canvas");
+        bgcanvas.width = video.width;
+        bgcanvas.height = canvas.height;
+        const ctxBg = bgcanvas.getContext("2d");
+        if (!ctxBg) return;
+
+        const img = require(`../${virtualBgImage}`);
+
+        ctxBg.drawImage(
+          // img,
+          canvas,
+          0,
+          0,
+          img.width,
+          img.height,
+          0,
+          0,
+          canvas.width,
+          canvas.height
+        );
+        const bgImg = ctxBg.getImageData(0, 0, canvas.width, canvas.height);
+
+        // 描画
+        const ctxImg = canvas.getContext("2d");
+        if (!ctxImg) return;
+        const ctxImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const bytes = ctxImageData.data;
+        for (let i = 0; i < canvas.height; i++) {
+          for (let j = 0; j < canvas.width; j++) {
+            const n = i * canvas.width + j;
+            if (seg.data[n] === 1) {
+              // for foreground (人)
+              bytes[4 * n + 0] = fgImg.data[4 * n + 0];
+              bytes[4 * n + 1] = fgImg.data[4 * n + 1];
+              bytes[4 * n + 2] = fgImg.data[4 * n + 2];
+              bytes[4 * n + 3] = fgImg.data[4 * n + 3];
+            } else {
+              // for background (背景)
+              bytes[4 * n + 0] = bgImg.data[4 * n + 0];
+              bytes[4 * n + 1] = bgImg.data[4 * n + 1];
+              bytes[4 * n + 2] = bgImg.data[4 * n + 2];
+              bytes[4 * n + 3] = bgImg.data[4 * n + 3];
+            }
+          }
+        }
+        ctxImg.putImageData(ctxImageData, 0, 0);
       };
+
 
       /**
        * removeBg
@@ -62,11 +106,38 @@ const VgCamera: FC = () => {
         const foregroundColor = { r: 0, g: 0, b: 0, a: 255 };
         const backgroundColor = { r: 0, g: 0, b: 0, a: 0 };
         const backgroundDarkeningMask = bodyPix.toMask(segmentation, foregroundColor, backgroundColor, false);
-        compositeFrame(video, canvas, backgroundDarkeningMask);
+        compositeFrame(video, canvas, backgroundDarkeningMask, segmentation);
         setCallBackId(requestAnimationFrame(removeBg));
       };
       removeBg();
     } else if (virtualBgType === 'bokeh') {
+      const removeBg = async () => {
+        const video: any = document.getElementById('webcam');
+        const canvas: any = document.getElementById('canvas');
+
+        // ? Segmentation occurs here, taking video frames as the input
+        if (!model) return;
+        const segmentation = await model.segmentPerson(video, {
+          flipHorizontal: false,
+          internalResolution: 'medium',
+          segmentationThreshold: 0.5,
+        });
+
+        const backgroundBlurAmount = 30;
+        const edgeBlurAmount = 10;
+        const flipHorizontal = false;
+        bodyPix.drawBokehEffect(
+          canvas,
+          video,
+          segmentation,
+          backgroundBlurAmount,
+          edgeBlurAmount,
+          flipHorizontal
+        );
+
+        setCallBackId(requestAnimationFrame(removeBg));
+      };
+      removeBg();
     } else {
       cancelAnimationFrame(callBackId);
     }
@@ -87,36 +158,37 @@ const VgCamera: FC = () => {
 };
 export default VgCamera;
 
-const useStyles = makeStyles(() =>
+const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     wrapperStyle: {
-      width: 'calc(100% - 16px)',
-      maxWidth: '700px',
-      height: 'calc(80% - 142px)',
-      top: '136px',
+      height: '70%',
+      width: '100%',
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
+      flexDirection: 'column',
+      boxSizing: 'border-box',
       backgroundColor: '#e1e5ea',
       borderRadius: '5px',
-      flexDirection: 'column',
-      position: 'absolute',
+      position: 'relative',
     },
 
     cameraStyle: {
-      width: '100%',
-      height: 'auto',
+      width: '70%',
+      height: '70%',
       position: 'absolute',
       zIndex: 10,
       transform: 'scaleX(-1)',
     },
 
     canvasStyle: {
-      width: '100%',
-      height: 'auto',
+      width: '70%',
+      height: '70%',
       position: 'absolute',
       zIndex: 20,
       transform: 'scaleX(-1)',
+      objectFit: 'contain',
+      backgroundSize: 'cover',
     },
 
     disableStyle: {

@@ -29,11 +29,11 @@ const VgSelectCard: React.FC = () => {
   };
 
   return (
-    <div className={classes.root}>
+    <div className={classes.wrapperStyle}>
       {dataList.map((data, idx) => {
         return (
           <Card
-            className={selectedId === data.id ? classes.selectCardStyle : classes.cardStyle}
+            className={selectedId === data.id ? classes.cardStyle + ' ' + classes.selectCardStyle : classes.cardStyle}
             key={data.id}
             onClick={() => onClickEvents(idx, data.id, data.image)}
           >
@@ -48,28 +48,23 @@ export default VgSelectCard;
 
 const useStyles = makeStyles((theme) =>
   createStyles({
-    root: {
+    wrapperStyle: {
       width: '100%',
-      maxWidth: '700px',
       height: '100px',
       backgroundColor: '#e1e5ea',
-      marginBottom: '8px',
+      margin: '30px 0 8px 0',
       borderRadius: '5px',
       display: 'flex',
-      justifyContent: 'space-around',
       alignItems: 'center',
     },
 
     cardStyle: {
       height: '80px',
       width: '60px',
-      margin: '0 5px',
+      margin: '0 10px',
     },
 
     selectCardStyle: {
-      height: '85px',
-      width: '65px',
-      margin: '0 5x',
       borderColor: 'blue',
       borderWidth: '2px',
       borderStyle: 'solid',
