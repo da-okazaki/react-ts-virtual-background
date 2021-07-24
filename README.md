@@ -1,6 +1,25 @@
-# Getting Started with Create React App
+# React Virtual Background
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+> Demo of running a virtual background on a video stream in a browser.
+
+👉 [Try it live here!](https://react-ts-virtual-background.vercel.app)
+
+![image](./docs/home_image.png "image")
+
+## Operation check platform
+- Mac
+- Windows
+- iOS
+- Android
+
+## Reference
+▼ Redux Toolkit
+
+https://redux-toolkit.js.org/
+
+▼ BodyPix
+
+https://developers-jp.googleblog.com/2019/04/bodypix-tensorflowjs.html
 
 ## Available Scripts
 
